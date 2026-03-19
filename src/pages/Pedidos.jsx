@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Check, FileText, X, Trash2, ArrowLeft } from 'lucide-react';
-import { getPedidos, getPedidosByCliente, getClientes, getProductos, addPedido, addCliente, updateEstadoPedido } from '../lib/api';
+import { Plus, Check, FileText, X, Trash2, ArrowLeft, Truck } from 'lucide-react';
+import { getPedidos, getPedidosByCliente, getClientes, getProductos, addPedido, addCliente, updateEstadoPedido, getRepartidores, asignarRepartidor, updateEstadoEntrega } from '../lib/api';
 
 const emptyRow = () => ({ producto_id: '', cantidad: 1, precio_unitario: 0 });
 const NUEVO_CLIENTE = '__nuevo__';
@@ -10,13 +10,17 @@ export default function Pedidos() {
   const [pedidos, setPedidos]               = useState([]);
   const [clientes, setClientes]             = useState([]);
   const [productos, setProductos]           = useState([]);
+  const [repartidores, setRepartidores]     = useState([]);
   const [loading, setLoading]               = useState(true);
   const [modal, setModal]                   = useState(false);
   const [clienteId, setClienteId]           = useState('');
   const [nuevoNombre, setNuevoNombre]       = useState('');
   const [direccionEntrega, setDireccionEntrega] = useState('');
+  const [repartidorId, setRepartidorId]     = useState('');
   const [rows, setRows]                     = useState([emptyRow()]);
   const [saving, setSaving]                 = useState(false);
+  const [asignandoId, setAsignandoId]       = useState(null); // pedido al que se está asignando repartidor
+  const [repartidorAsignar, setRepartidorAsignar] = useState('');
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const filtroId     = searchParams.get('cliente_id');
@@ -30,14 +34,19 @@ export default function Pedidos() {
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); getClientes().then(setClientes); getProductos().then(setProductos); }, [filtroId]);
+  useEffect(() => {
+    load();
+    getClientes().then(setClientes);
+    getProductos().then(setProductos);
+    getRepartidores().then(r => setRepartidores(r.filter(x => x.activo)));
+  }, [filtroId]);
 
   const openModal = () => {
-    setClienteId(''); setNuevoNombre(''); setDireccionEntrega(''); setRows([emptyRow()]); setModal(true);
+    setClienteId(''); setNuevoNombre(''); setDireccionEntrega(''); setRepartidorId(''); setRows([emptyRow()]); setModal(true);
   };
 
   const closeModal = () => {
-    setModal(false); setClienteId(''); setNuevoNombre(''); setDireccionEntrega(''); setRows([emptyRow()]);
+    setModal(false); setClienteId(''); setNuevoNombre(''); setDireccionEntrega(''); setRepartidorId(''); setRows([emptyRow()]);
   };
 
   const handleRowChange = (i, field, value) => {
@@ -70,6 +79,7 @@ export default function Pedidos() {
       }
       const pedidoData = { cliente_id: resolvedId };
       if (direccionEntrega.trim()) pedidoData.direccion_entrega = direccionEntrega.trim();
+      if (repartidorId) { pedidoData.repartidor_id = repartidorId; pedidoData.estado_entrega = 'en_ruta'; }
       await addPedido(
         pedidoData,
         valid.map(r => ({ producto_id: r.producto_id, cantidad: Number(r.cantidad), precio_unitario: Number(r.precio_unitario) }))
@@ -81,8 +91,22 @@ export default function Pedidos() {
   };
 
   const handleEntregado = async (id) => {
-    try { await updateEstadoPedido(id, 'entregado'); setPedidos(p => p.map(x => x.id === id ? { ...x, estado: 'entregado' } : x)); }
-    catch (err) { alert('Error: ' + err.message); }
+    try {
+      await updateEstadoPedido(id, 'entregado');
+      await updateEstadoEntrega(id, 'entregado');
+      setPedidos(p => p.map(x => x.id === id ? { ...x, estado: 'entregado', estado_entrega: 'entregado' } : x));
+    } catch (err) { alert('Error: ' + err.message); }
+  };
+
+  const handleAsignarRepartidor = async (pedidoId) => {
+    if (!repartidorAsignar) return alert('Selecciona un repartidor');
+    try {
+      await asignarRepartidor(pedidoId, repartidorAsignar);
+      const rep = repartidores.find(r => r.id === repartidorAsignar);
+      setPedidos(p => p.map(x => x.id === pedidoId ? { ...x, repartidor_id: repartidorAsignar, repartidores: { nombre: rep?.nombre }, estado_entrega: 'en_ruta' } : x));
+      setAsignandoId(null);
+      setRepartidorAsignar('');
+    } catch (err) { alert('Error: ' + err.message); }
   };
 
   const formatFecha = (p) => p.fecha ? new Date(p.fecha + 'T00:00:00').toLocaleDateString('es-ES') : new Date(p.created_at).toLocaleDateString('es-ES');
@@ -110,17 +134,40 @@ export default function Pedidos() {
          pedidos.length === 0 ? <div className="g-empty">No hay pedidos.</div> : (
           <div className="g-table-wrap">
             <table className="g-table">
-              <thead><tr><th>Ref.</th><th>Cliente</th><th>Fecha</th><th>Total</th><th>Estado</th><th></th></tr></thead>
+              <thead><tr><th>Ref.</th><th>Cliente</th><th>Fecha</th><th>Total</th><th>Estado</th><th>Repartidor</th><th></th></tr></thead>
               <tbody>
                 {pedidos.map(p => {
                   const total = (p.pedido_items ?? []).reduce((s, i) => s + Number(i.cantidad) * Number(i.precio_unitario), 0);
+                  const estadoEntrega = p.estado_entrega || 'pendiente';
+                  const badgeEntrega = estadoEntrega === 'entregado' ? 'g-badge-green' : estadoEntrega === 'en_ruta' ? 'g-badge-blue' : 'g-badge-yellow';
                   return (
                   <tr key={p.id}>
                     <td><span style={{ fontFamily: 'monospace', fontSize: 12, color: '#64748b' }}>#{p.id.slice(0,8).toUpperCase()}</span></td>
                     <td style={{ fontWeight: 600 }}>{p.clientes?.nombre || '—'}</td>
                     <td>{formatFecha(p)}</td>
                     <td style={{ fontWeight: 600 }}>{total.toFixed(2)} €</td>
-                    <td><span className={`g-badge ${p.estado === 'entregado' ? 'g-badge-green' : 'g-badge-yellow'}`}>{p.estado}</span></td>
+                    <td><span className={`g-badge ${badgeEntrega}`}>{estadoEntrega.replace('_', ' ')}</span></td>
+                    <td>
+                      {asignandoId === p.id ? (
+                        <div style={{ display: 'flex', gap: 6 }}>
+                          <select className="g-select" style={{ fontSize: 12, padding: '2px 6px' }} value={repartidorAsignar} onChange={e => setRepartidorAsignar(e.target.value)}>
+                            <option value="">— Seleccionar —</option>
+                            {repartidores.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
+                          </select>
+                          <button className="g-btn g-btn-success g-btn-sm" onClick={() => handleAsignarRepartidor(p.id)}><Check size={13} /></button>
+                          <button className="g-btn g-btn-secondary g-btn-sm" onClick={() => { setAsignandoId(null); setRepartidorAsignar(''); }}><X size={13} /></button>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <span style={{ fontSize: 13 }}>{p.repartidores?.nombre || '—'}</span>
+                          {estadoEntrega !== 'entregado' && (
+                            <button className="g-btn g-btn-secondary g-btn-sm" onClick={() => { setAsignandoId(p.id); setRepartidorAsignar(p.repartidor_id || ''); }} title="Asignar repartidor">
+                              <Truck size={13} />
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </td>
                     <td>
                       <div style={{ display: 'flex', gap: 8 }}>
                         {p.estado === 'pendiente' && (
@@ -186,6 +233,17 @@ export default function Pedidos() {
                     placeholder="Calle, número, ciudad..."
                   />
                 </div>
+
+                {/* ── Repartidor ── */}
+                {repartidores.length > 0 && (
+                  <div className="g-field">
+                    <label className="g-label">Repartidor <span style={{ fontWeight: 400, color: '#94a3b8' }}>(opcional)</span></label>
+                    <select className="g-select" value={repartidorId} onChange={e => setRepartidorId(e.target.value)}>
+                      <option value="">— Asignar después —</option>
+                      {repartidores.map(r => <option key={r.id} value={r.id}>{r.nombre}{r.zona ? ` · ${r.zona}` : ''}</option>)}
+                    </select>
+                  </div>
+                )}
 
                 {/* ── Productos ── */}
                 <div className="g-field" style={{ marginBottom: 0 }}>

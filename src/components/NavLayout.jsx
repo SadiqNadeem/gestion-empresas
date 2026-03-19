@@ -1,14 +1,15 @@
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Package, Users, ShoppingCart, BarChart2, FileText, LogOut } from 'lucide-react';
+import { LayoutDashboard, Package, Users, ShoppingCart, BarChart2, FileText, Truck, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const links = [
-  { to: '/dashboard',   icon: LayoutDashboard, label: 'Dashboard'   },
-  { to: '/productos',   icon: Package,         label: 'Productos'   },
-  { to: '/clientes',    icon: Users,           label: 'Clientes'    },
-  { to: '/pedidos',     icon: ShoppingCart,    label: 'Pedidos'     },
-  { to: '/stock',       icon: BarChart2,       label: 'Stock'       },
-  { to: '/facturacion', icon: FileText,        label: 'Facturación' },
+  { to: '/dashboard',     icon: LayoutDashboard, label: 'Dashboard'     },
+  { to: '/productos',     icon: Package,         label: 'Productos'     },
+  { to: '/clientes',      icon: Users,           label: 'Clientes'      },
+  { to: '/pedidos',       icon: ShoppingCart,    label: 'Pedidos'       },
+  { to: '/repartidores',  icon: Truck,           label: 'Repartidores'  },
+  { to: '/stock',         icon: BarChart2,       label: 'Stock'         },
+  { to: '/facturacion',   icon: FileText,        label: 'Facturación'   },
 ];
 
 export default function NavLayout() {

@@ -11,6 +11,7 @@ import Clientes from './pages/Clientes';
 import Pedidos from './pages/Pedidos';
 import Stock from './pages/Stock';
 import Facturacion from './pages/Facturacion';
+import Repartidores from './pages/Repartidores';
 import './index.css';
 
 createRoot(document.getElementById('root')).render(
@@ -31,6 +32,7 @@ createRoot(document.getElementById('root')).render(
             <Route path="/productos"   element={<Productos />}   />
             <Route path="/clientes"    element={<Clientes />}    />
             <Route path="/pedidos"     element={<Pedidos />}     />
+            <Route path="/repartidores" element={<Repartidores />} />
             <Route path="/stock"       element={<Stock />}       />
             <Route path="/facturacion" element={<Facturacion />} />
           </Route>

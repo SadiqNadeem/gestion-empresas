@@ -68,7 +68,7 @@ export async function deleteCliente(id) {
 export async function getPedidos() {
   const { data, error } = await supabase
     .from('pedidos')
-    .select('*, clientes(nombre), pedido_items(cantidad, precio_unitario)')
+    .select('*, clientes(nombre), pedido_items(cantidad, precio_unitario), repartidores(nombre)')
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data;
@@ -77,7 +77,7 @@ export async function getPedidos() {
 export async function getPedidosByCliente(clienteId) {
   const { data, error } = await supabase
     .from('pedidos')
-    .select('*, clientes(nombre), pedido_items(cantidad, precio_unitario)')
+    .select('*, clientes(nombre), pedido_items(cantidad, precio_unitario), repartidores(nombre)')
     .eq('cliente_id', clienteId)
     .order('created_at', { ascending: false });
   if (error) throw error;
@@ -131,6 +131,65 @@ export async function getPedidoItems(pedidoId) {
     .from('pedido_items')
     .select('*, productos(nombre, categoria)')
     .eq('pedido_id', pedidoId);
+  if (error) throw error;
+  return data;
+}
+
+// ─── Repartidores ─────────────────────────────────────────────────────────────
+
+export async function getRepartidores() {
+  const { data, error } = await supabase
+    .from('repartidores')
+    .select('*')
+    .order('nombre');
+  if (error) throw error;
+  return data;
+}
+
+export async function addRepartidor(data) {
+  const { data: created, error } = await supabase
+    .from('repartidores')
+    .insert(data)
+    .select()
+    .single();
+  if (error) throw error;
+  return created;
+}
+
+export async function updateRepartidor(id, data) {
+  const { data: updated, error } = await supabase
+    .from('repartidores')
+    .update(data)
+    .eq('id', id)
+    .select()
+    .single();
+  if (error) throw error;
+  return updated;
+}
+
+export async function deleteRepartidor(id) {
+  const { error } = await supabase.from('repartidores').delete().eq('id', id);
+  if (error) throw error;
+}
+
+export async function asignarRepartidor(pedidoId, repartidorId) {
+  const { data, error } = await supabase
+    .from('pedidos')
+    .update({ repartidor_id: repartidorId, estado_entrega: 'en_ruta' })
+    .eq('id', pedidoId)
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateEstadoEntrega(pedidoId, estado_entrega) {
+  const { data, error } = await supabase
+    .from('pedidos')
+    .update({ estado_entrega })
+    .eq('id', pedidoId)
+    .select()
+    .single();
   if (error) throw error;
   return data;
 }
