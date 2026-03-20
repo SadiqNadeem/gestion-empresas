@@ -9,6 +9,8 @@ export default function Facturacion() {
   const [pedidoId, setPedidoId]         = useState('');
   const [items, setItems]               = useState([]);
   const [loadingItems, setLoadingItems] = useState(false);
+  const [ivaRate, setIvaRate]           = useState(21);
+  const [conIva, setConIva]             = useState(true);
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export default function Facturacion() {
 
   const pedido   = pedidos.find(p => p.id === pedidoId);
   const subtotal = items.reduce((s, i) => s + Number(i.cantidad) * Number(i.precio_unitario), 0);
-  const iva      = subtotal * 0.21;
+  const iva      = conIva ? subtotal * (ivaRate / 100) : 0;
   const total    = subtotal + iva;
 
   const formatFecha = (p) => {
@@ -68,8 +70,10 @@ export default function Facturacion() {
 
     y += 8; doc.setDrawColor(226, 232, 240); doc.line(120, y, 190, y); y += 8;
     doc.setFontSize(10); doc.setTextColor(100, 116, 139);
-    doc.text('Subtotal:', 120, y); doc.text(`${subtotal.toFixed(2)} €`, 183, y, { align: 'right' }); y += 8;
-    doc.text('VAT (21%):', 120, y); doc.text(`${iva.toFixed(2)} €`, 183, y, { align: 'right' }); y += 5;
+    if (conIva) {
+      doc.text('Subtotal:', 120, y); doc.text(`${subtotal.toFixed(2)} €`, 183, y, { align: 'right' }); y += 8;
+      doc.text(`VAT (${ivaRate}%):`, 120, y); doc.text(`${iva.toFixed(2)} €`, 183, y, { align: 'right' }); y += 5;
+    }
     doc.line(120, y, 190, y); y += 9;
     doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(15, 23, 42);
     doc.text('TOTAL:', 120, y); doc.text(`${total.toFixed(2)} €`, 183, y, { align: 'right' });
@@ -82,7 +86,7 @@ export default function Facturacion() {
       <h1 className="g-page-title">Invoicing</h1>
 
       <div className="g-card" style={{ marginBottom: 24 }}>
-        <div className="g-field" style={{ marginBottom: 0 }}>
+        <div className="g-field">
           <label className="g-label">Select order</label>
           <select className="g-select" value={pedidoId} onChange={e => setPedidoId(e.target.value)}>
             <option value="">— Select an order —</option>
@@ -92,6 +96,32 @@ export default function Facturacion() {
               </option>
             ))}
           </select>
+        </div>
+        <div className="g-field" style={{ marginBottom: 0 }}>
+          <label className="g-label">VAT</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontSize: 14 }}>
+              <input
+                type="checkbox"
+                checked={conIva}
+                onChange={e => setConIva(e.target.checked)}
+                style={{ width: 16, height: 16, accentColor: '#059669', cursor: 'pointer' }}
+              />
+              Include VAT
+            </label>
+            {conIva && (
+              <select
+                className="g-select"
+                style={{ width: 'auto' }}
+                value={ivaRate}
+                onChange={e => setIvaRate(Number(e.target.value))}
+              >
+                <option value={4}>4%</option>
+                <option value={10}>10%</option>
+                <option value={21}>21%</option>
+              </select>
+            )}
+          </div>
         </div>
       </div>
 
@@ -133,8 +163,8 @@ export default function Facturacion() {
             <div className="g-invoice-divider" />
 
             <div className="g-invoice-totals">
-              <div className="g-invoice-total-row"><span>Subtotal</span><span>{subtotal.toFixed(2)} €</span></div>
-              <div className="g-invoice-total-row"><span>VAT (21%)</span><span>{iva.toFixed(2)} €</span></div>
+              {conIva && <div className="g-invoice-total-row"><span>Subtotal</span><span>{subtotal.toFixed(2)} €</span></div>}
+              {conIva && <div className="g-invoice-total-row"><span>VAT ({ivaRate}%)</span><span>{iva.toFixed(2)} €</span></div>}
               <div className="g-invoice-total-row main"><span>TOTAL</span><span>{total.toFixed(2)} €</span></div>
             </div>
           </div>
