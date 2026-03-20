@@ -22,6 +22,8 @@ export default function Pedidos() {
   const [rows, setRows]                     = useState([emptyRow()]);
   const [saving, setSaving]                 = useState(false);
   const [mapOpen, setMapOpen]               = useState(false);
+  const [conIva, setConIva]                 = useState(false);
+  const [ivaRate, setIvaRate]               = useState(21);
   const [asignandoId, setAsignandoId]       = useState(null); // pedido al que se está asignando repartidor
   const [repartidorAsignar, setRepartidorAsignar] = useState('');
   const navigate = useNavigate();
@@ -45,11 +47,11 @@ export default function Pedidos() {
   }, [filtroId]);
 
   const openModal = () => {
-    setClienteId(''); setNuevoNombre(''); setDireccionEntrega(''); setRepartidorId(''); setRows([emptyRow()]); setModal(true);
+    setClienteId(''); setNuevoNombre(''); setDireccionEntrega(''); setRepartidorId(''); setRows([emptyRow()]); setConIva(false); setIvaRate(21); setModal(true);
   };
 
   const closeModal = () => {
-    setModal(false); setClienteId(''); setNuevoNombre(''); setDireccionEntrega(''); setRepartidorId(''); setRows([emptyRow()]);
+    setModal(false); setClienteId(''); setNuevoNombre(''); setDireccionEntrega(''); setRepartidorId(''); setRows([emptyRow()]); setConIva(false); setIvaRate(21);
   };
 
   const handleRowChange = (i, field, value) => {
@@ -64,7 +66,9 @@ export default function Pedidos() {
     });
   };
 
-  const total = rows.reduce((s, r) => s + Number(r.precio_unitario) * Number(r.cantidad), 0);
+  const subtotal = rows.reduce((s, r) => s + Number(r.precio_unitario) * Number(r.cantidad), 0);
+  const ivaImporte = conIva ? subtotal * (ivaRate / 100) : 0;
+  const total = subtotal + ivaImporte;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -333,7 +337,31 @@ export default function Pedidos() {
                   <button type="button" className="g-btn g-btn-secondary g-btn-sm" style={{ marginTop: 8 }} onClick={() => setRows(p => [...p, emptyRow()])}>
                     <Plus size={14} /> Add product
                   </button>
-                  <div className="g-item-row-total">Total: <strong>{total.toFixed(2)} €</strong></div>
+                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: '2px solid #e2e8f0' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                      <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer', fontSize: 13, color: '#374151' }}>
+                        <input type="checkbox" checked={conIva} onChange={e => setConIva(e.target.checked)}
+                          style={{ width: 15, height: 15, accentColor: '#059669', cursor: 'pointer' }} />
+                        Include VAT
+                      </label>
+                      {conIva && (
+                        <select className="g-select" style={{ width: 'auto', fontSize: 13, padding: '3px 8px' }}
+                          value={ivaRate} onChange={e => setIvaRate(Number(e.target.value))}>
+                          <option value={4}>4%</option>
+                          <option value={10}>10%</option>
+                          <option value={21}>21%</option>
+                        </select>
+                      )}
+                    </div>
+                    {conIva && (
+                      <div style={{ textAlign: 'right', fontSize: 13, color: '#64748b', marginBottom: 4 }}>
+                        Subtotal: <strong>{subtotal.toFixed(2)} €</strong> &nbsp;·&nbsp; VAT ({ivaRate}%): <strong>{ivaImporte.toFixed(2)} €</strong>
+                      </div>
+                    )}
+                    <div style={{ textAlign: 'right', fontSize: 16, fontWeight: 700, color: '#0f172a' }}>
+                      Total: {total.toFixed(2)} €
+                    </div>
+                  </div>
                 </div>
 
               </div>
