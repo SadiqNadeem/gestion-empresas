@@ -85,7 +85,7 @@ export default function Pedidos() {
       if (repartidorId) { pedidoData.repartidor_id = repartidorId; pedidoData.estado_entrega = 'en_ruta'; }
       await addPedido(
         pedidoData,
-        valid.map(r => ({ producto_id: r.producto_id, cantidad: Number(r.cantidad), precio_unitario: Number(r.precio_unitario), unidad: r.unidad || 'units' }))
+        valid.map(r => ({ producto_id: r.producto_id, cantidad: Number(r.cantidad), precio_unitario: Number(r.precio_unitario) }))
       );
       closeModal();
       load();
