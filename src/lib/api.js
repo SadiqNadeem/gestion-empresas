@@ -124,6 +124,12 @@ export async function updateEstadoPedido(id, estado) {
   return data;
 }
 
+export async function deletePedido(id) {
+  await supabase.from('pedido_items').delete().eq('pedido_id', id);
+  const { error } = await supabase.from('pedidos').delete().eq('id', id);
+  if (error) throw error;
+}
+
 // ─── Pedido items ─────────────────────────────────────────────────────────────
 
 export async function getPedidoItems(pedidoId) {

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Plus, Check, FileText, X, Trash2, ArrowLeft, Truck, Map } from 'lucide-react';
-import { getPedidos, getPedidosByCliente, getClientes, getProductos, addPedido, addCliente, updateEstadoPedido, getRepartidores, asignarRepartidor, updateEstadoEntrega } from '../lib/api';
+import { getPedidos, getPedidosByCliente, getClientes, getProductos, addPedido, addCliente, updateEstadoPedido, getRepartidores, asignarRepartidor, updateEstadoEntrega, deletePedido } from '../lib/api';
 import MapPicker from '../components/MapPicker';
 
 const UNIDADES = ['units', 'boxes', 'sacks', 'packages', 'kg', 'liters'];
@@ -112,6 +112,22 @@ export default function Pedidos() {
     } catch (err) { alert('Error: ' + err.message); }
   };
 
+  const handleCambiarEstado = async (id, nuevoEstado) => {
+    try {
+      await updateEstadoPedido(id, nuevoEstado === 'entregado' ? 'entregado' : 'pendiente');
+      await updateEstadoEntrega(id, nuevoEstado);
+      setPedidos(p => p.map(x => x.id === id ? { ...x, estado: nuevoEstado === 'entregado' ? 'entregado' : 'pendiente', estado_entrega: nuevoEstado } : x));
+    } catch (err) { alert('Error: ' + err.message); }
+  };
+
+  const handleEliminar = async (id) => {
+    if (!window.confirm('Delete this order? This action cannot be undone.')) return;
+    try {
+      await deletePedido(id);
+      setPedidos(p => p.filter(x => x.id !== id));
+    } catch (err) { alert('Error: ' + err.message); }
+  };
+
   const formatFecha = (p) => p.fecha ? new Date(p.fecha + 'T00:00:00').toLocaleDateString('en-GB') : new Date(p.created_at).toLocaleDateString('en-GB');
 
   return (
@@ -159,7 +175,22 @@ export default function Pedidos() {
                     <td style={{ fontWeight: 600 }}>{p.clientes?.nombre || '—'}</td>
                     <td>{formatFecha(p)}</td>
                     <td style={{ fontWeight: 600 }}>{total.toFixed(2)} €</td>
-                    <td><span className={`g-badge ${badgeEntrega}`}>{estadoEntrega.replace('_', ' ')}</span></td>
+                    <td>
+                      <select
+                        value={estadoEntrega}
+                        onChange={e => handleCambiarEstado(p.id, e.target.value)}
+                        style={{
+                          fontSize: 12, fontWeight: 600, border: '1px solid #e2e8f0',
+                          borderRadius: 6, padding: '3px 8px', cursor: 'pointer',
+                          background: estadoEntrega === 'entregado' ? '#dcfce7' : estadoEntrega === 'en_ruta' ? '#dbeafe' : '#fef9c3',
+                          color: estadoEntrega === 'entregado' ? '#166534' : estadoEntrega === 'en_ruta' ? '#1e40af' : '#854d0e',
+                        }}
+                      >
+                        <option value="pendiente">pending</option>
+                        <option value="en_ruta">en route</option>
+                        <option value="entregado">delivered</option>
+                      </select>
+                    </td>
                     <td>
                       {asignandoId === p.id ? (
                         <div style={{ display: 'flex', gap: 6 }}>
@@ -183,13 +214,12 @@ export default function Pedidos() {
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: 8 }}>
-                        {p.estado === 'pendiente' && (
-                          <button className="g-btn g-btn-success g-btn-sm" onClick={() => handleEntregado(p.id)}>
-                            <Check size={14} /> Deliver
-                          </button>
-                        )}
                         <button className="g-btn g-btn-secondary g-btn-sm" onClick={() => navigate(`/facturacion?pedidoId=${p.id}`)}>
                           <FileText size={14} /> Invoice
+                        </button>
+                        <button className="g-btn g-btn-sm" onClick={() => handleEliminar(p.id)}
+                          style={{ background: '#fee2e2', color: '#dc2626', border: 'none', cursor: 'pointer', borderRadius: 6, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <Trash2 size={14} />
                         </button>
                       </div>
                     </td>
