@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Check, FileText, X, Trash2, ArrowLeft, Truck } from 'lucide-react';
+import { Plus, Check, FileText, X, Trash2, ArrowLeft, Truck, Map } from 'lucide-react';
 import { getPedidos, getPedidosByCliente, getClientes, getProductos, addPedido, addCliente, updateEstadoPedido, getRepartidores, asignarRepartidor, updateEstadoEntrega } from '../lib/api';
+import MapPicker from '../components/MapPicker';
 
-const emptyRow = () => ({ producto_id: '', cantidad: 1, precio_unitario: 0 });
+const UNIDADES = ['units', 'boxes', 'sacks', 'packages', 'kg', 'liters'];
+const emptyRow = () => ({ producto_id: '', cantidad: 1, precio_unitario: 0, unidad: 'units' });
 const NUEVO_CLIENTE = '__nuevo__';
 
 export default function Pedidos() {
@@ -19,6 +21,7 @@ export default function Pedidos() {
   const [repartidorId, setRepartidorId]     = useState('');
   const [rows, setRows]                     = useState([emptyRow()]);
   const [saving, setSaving]                 = useState(false);
+  const [mapOpen, setMapOpen]               = useState(false);
   const [asignandoId, setAsignandoId]       = useState(null); // pedido al que se está asignando repartidor
   const [repartidorAsignar, setRepartidorAsignar] = useState('');
   const navigate = useNavigate();
@@ -82,7 +85,7 @@ export default function Pedidos() {
       if (repartidorId) { pedidoData.repartidor_id = repartidorId; pedidoData.estado_entrega = 'en_ruta'; }
       await addPedido(
         pedidoData,
-        valid.map(r => ({ producto_id: r.producto_id, cantidad: Number(r.cantidad), precio_unitario: Number(r.precio_unitario) }))
+        valid.map(r => ({ producto_id: r.producto_id, cantidad: Number(r.cantidad), precio_unitario: Number(r.precio_unitario), unidad: r.unidad || 'units' }))
       );
       closeModal();
       load();
@@ -124,14 +127,24 @@ export default function Pedidos() {
             </button>
           )}
         </div>
-        <button className="g-btn g-btn-primary" onClick={openModal}>
-          <Plus size={16} /> New order
-        </button>
+        {pedidos.length > 0 && (
+          <button className="g-btn g-btn-primary" onClick={openModal}>
+            <Plus size={16} /> New order
+          </button>
+        )}
       </div>
 
       <div className="g-card">
         {loading ? <div className="g-loading">Loading...</div> :
-         pedidos.length === 0 ? <div className="g-empty">No orders yet.</div> : (
+         pedidos.length === 0 ? (
+          <div className="g-empty">
+            No orders yet.
+            <br />
+            <button className="g-btn g-btn-primary" style={{ marginTop: 16 }} onClick={openModal}>
+              <Plus size={16} /> New order
+            </button>
+          </div>
+         ) : (
           <div className="g-table-wrap">
             <table className="g-table">
               <thead><tr><th>Ref.</th><th>Customer</th><th>Date</th><th>Total</th><th>Status</th><th>Driver</th><th></th></tr></thead>
@@ -226,12 +239,28 @@ export default function Pedidos() {
                 {/* ── Dirección de entrega ── */}
                 <div className="g-field">
                   <label className="g-label">Delivery address <span style={{ fontWeight: 400, color: '#94a3b8' }}>(optional)</span></label>
-                  <input
-                    className="g-input"
-                    value={direccionEntrega}
-                    onChange={e => setDireccionEntrega(e.target.value)}
-                    placeholder="Street, number, city..."
-                  />
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <input
+                      className="g-input"
+                      style={{ flex: 1 }}
+                      value={direccionEntrega}
+                      onChange={e => setDireccionEntrega(e.target.value)}
+                      placeholder="Street, number, city..."
+                    />
+                    <button
+                      type="button"
+                      title="Select on map"
+                      onClick={() => setMapOpen(true)}
+                      style={{
+                        flexShrink: 0, padding: '0 12px', borderRadius: 8,
+                        border: '1px solid #e2e8f0', background: '#f8fafc',
+                        cursor: 'pointer', color: '#059669', display: 'flex', alignItems: 'center', gap: 5,
+                        fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap',
+                      }}
+                    >
+                      <Map size={15} /> Map
+                    </button>
+                  </div>
                 </div>
 
                 {/* ── Repartidor ── */}
@@ -251,6 +280,7 @@ export default function Pedidos() {
                   <div className="g-item-row-header">
                     <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Product</span>
                     <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Qty.</span>
+                    <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Unit</span>
                     <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Price €</span>
                     <span></span>
                   </div>
@@ -261,6 +291,9 @@ export default function Pedidos() {
                         {productos.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
                       </select>
                       <input className="g-input" type="number" min="1" value={row.cantidad} onChange={e => handleRowChange(i, 'cantidad', e.target.value)} />
+                      <select className="g-select" value={row.unidad} onChange={e => handleRowChange(i, 'unidad', e.target.value)}>
+                        {UNIDADES.map(u => <option key={u} value={u}>{u}</option>)}
+                      </select>
                       <input className="g-input" type="number" step="0.01" min="0" value={row.precio_unitario} onChange={e => handleRowChange(i, 'precio_unitario', e.target.value)} />
                       <button type="button" className="g-remove-btn" disabled={rows.length === 1} onClick={() => setRows(p => p.filter((_, j) => j !== i))}>
                         <Trash2 size={14} />
@@ -281,6 +314,16 @@ export default function Pedidos() {
             </form>
           </div>
         </div>
+      )}
+
+      {mapOpen && (
+        <MapPicker
+          onClose={() => setMapOpen(false)}
+          onConfirm={(addr) => {
+            setDireccionEntrega(addr);
+            setMapOpen(false);
+          }}
+        />
       )}
     </div>
   );
