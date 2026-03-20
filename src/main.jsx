@@ -37,7 +37,7 @@ createRoot(document.getElementById('root')).render(
             <Route path="/facturacion" element={<Facturacion />} />
           </Route>
 
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
