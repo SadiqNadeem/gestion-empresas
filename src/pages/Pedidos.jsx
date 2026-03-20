@@ -172,7 +172,7 @@ export default function Pedidos() {
                         </div>
                       ) : (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <span style={{ fontSize: 13 }}>{p.repartidores?.nombre || '—'}</span>
+                          <span style={{ fontSize: 13 }}>{repartidores.find(r => r.id === p.repartidor_id)?.nombre || '—'}</span>
                           {estadoEntrega !== 'entregado' && (
                             <button className="g-btn g-btn-secondary g-btn-sm" onClick={() => { setAsignandoId(p.id); setRepartidorAsignar(p.repartidor_id || ''); }} title="Assign driver">
                               <Truck size={13} />

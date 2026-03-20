@@ -68,7 +68,7 @@ export async function deleteCliente(id) {
 export async function getPedidos() {
   const { data, error } = await supabase
     .from('pedidos')
-    .select('*, clientes(nombre), pedido_items(cantidad, precio_unitario), repartidores(nombre)')
+    .select('*, clientes(nombre), pedido_items(cantidad, precio_unitario)')
     .order('created_at', { ascending: false });
   if (error) throw error;
   return data;
@@ -77,7 +77,7 @@ export async function getPedidos() {
 export async function getPedidosByCliente(clienteId) {
   const { data, error } = await supabase
     .from('pedidos')
-    .select('*, clientes(nombre), pedido_items(cantidad, precio_unitario), repartidores(nombre)')
+    .select('*, clientes(nombre), pedido_items(cantidad, precio_unitario)')
     .eq('cliente_id', clienteId)
     .order('created_at', { ascending: false });
   if (error) throw error;
