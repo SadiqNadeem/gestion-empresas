@@ -22,21 +22,21 @@ export default function Dashboard() {
   }, []);
 
   const cards = [
-    { icon: <Package size={26} color="#059669" />,                                       value: metrics.productos,  label: 'Total productos'      },
-    { icon: <Users size={26} color="#2563eb" />,                                         value: metrics.clientes,   label: 'Total clientes'        },
-    { icon: <ShoppingCart size={26} color="#d97706" />,                                  value: metrics.pendientes, label: 'Pedidos pendientes'    },
-    { icon: <AlertTriangle size={26} color={metrics.stockBajo > 0 ? '#dc2626' : '#059669'} />, value: metrics.stockBajo,  label: 'Alertas de stock' },
+    { icon: <Package size={26} color="#059669" />,                                       value: metrics.productos,  label: 'Total products'    },
+    { icon: <Users size={26} color="#2563eb" />,                                         value: metrics.clientes,   label: 'Total customers'   },
+    { icon: <ShoppingCart size={26} color="#d97706" />,                                  value: metrics.pendientes, label: 'Pending orders'    },
+    { icon: <AlertTriangle size={26} color={metrics.stockBajo > 0 ? '#dc2626' : '#059669'} />, value: metrics.stockBajo,  label: 'Stock alerts' },
   ];
 
   const buttons = [
-    { to: '/productos',   icon: <Package size={34} />,     label: 'Productos'   },
-    { to: '/clientes',    icon: <Users size={34} />,        label: 'Clientes'    },
-    { to: '/pedidos',     icon: <ShoppingCart size={34} />, label: 'Pedidos'     },
-    { to: '/stock',       icon: <BarChart2 size={34} />,    label: 'Stock'       },
-    { to: '/facturacion', icon: <FileText size={34} />,     label: 'Facturación' },
+    { to: '/productos',   icon: <Package size={34} />,     label: 'Products'  },
+    { to: '/clientes',    icon: <Users size={34} />,        label: 'Customers' },
+    { to: '/pedidos',     icon: <ShoppingCart size={34} />, label: 'Orders'    },
+    { to: '/stock',       icon: <BarChart2 size={34} />,    label: 'Stock'     },
+    { to: '/facturacion', icon: <FileText size={34} />,     label: 'Invoicing' },
   ];
 
-  if (loading) return <div className="g-page"><div className="g-loading">Cargando...</div></div>;
+  if (loading) return <div className="g-page"><div className="g-loading">Loading...</div></div>;
 
   return (
     <div className="g-page">

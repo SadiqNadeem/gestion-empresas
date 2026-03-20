@@ -3,12 +3,12 @@ import { Plus, Trash2, X } from 'lucide-react';
 import { getProductos, addProducto, deleteProducto } from '../lib/api';
 
 function StockBadge({ stock }) {
-  if (stock === 0) return <span className="g-badge g-badge-red">Sin stock</span>;
-  if (stock < 10)  return <span className="g-badge g-badge-yellow">{stock} uds</span>;
-  return <span className="g-badge g-badge-green">{stock} uds</span>;
+  if (stock === 0) return <span className="g-badge g-badge-red">Out of stock</span>;
+  if (stock < 10)  return <span className="g-badge g-badge-yellow">{stock} units</span>;
+  return <span className="g-badge g-badge-green">{stock} units</span>;
 }
 
-const emptyForm = { nombre: '', categoria: 'Bolsas', precio: '', stock: '0' };
+const emptyForm = { nombre: '', categoria: 'Bags', precio: '', stock: '0' };
 
 export default function Productos() {
   const [productos, setProductos] = useState([]);
@@ -31,7 +31,7 @@ export default function Productos() {
   };
 
   const handleDelete = async (id, nombre) => {
-    if (!confirm(`¿Eliminar "${nombre}"?`)) return;
+    if (!confirm(`Delete "${nombre}"?`)) return;
     try { await deleteProducto(id); setProductos(p => p.filter(x => x.id !== id)); }
     catch (err) { alert('Error: ' + err.message); }
   };
@@ -39,18 +39,18 @@ export default function Productos() {
   return (
     <div className="g-page">
       <div className="g-section-header">
-        <h1 className="g-page-title" style={{ margin: 0 }}>Productos</h1>
+        <h1 className="g-page-title" style={{ margin: 0 }}>Products</h1>
         <button className="g-btn g-btn-primary" onClick={() => { setForm(emptyForm); setModal(true); }}>
-          <Plus size={16} /> Añadir producto
+          <Plus size={16} /> Add product
         </button>
       </div>
 
       <div className="g-card">
-        {loading ? <div className="g-loading">Cargando...</div> :
-         productos.length === 0 ? <div className="g-empty">No hay productos aún.</div> : (
+        {loading ? <div className="g-loading">Loading...</div> :
+         productos.length === 0 ? <div className="g-empty">No products yet.</div> : (
           <div className="g-table-wrap">
             <table className="g-table">
-              <thead><tr><th>Nombre</th><th>Categoría</th><th>Precio</th><th>Stock</th><th></th></tr></thead>
+              <thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th></th></tr></thead>
               <tbody>
                 {productos.map(p => (
                   <tr key={p.id}>
@@ -75,35 +75,35 @@ export default function Productos() {
         <div className="g-modal-overlay" onClick={() => setModal(false)}>
           <div className="g-modal" onClick={e => e.stopPropagation()}>
             <div className="g-modal-header">
-              <span className="g-modal-title">Nuevo producto</span>
+              <span className="g-modal-title">New product</span>
               <button className="g-modal-close" onClick={() => setModal(false)}><X size={20} /></button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="g-modal-body">
                 <div className="g-field">
-                  <label className="g-label">Nombre *</label>
+                  <label className="g-label">Name *</label>
                   <input className="g-input" required autoFocus value={form.nombre} onChange={e => setForm(f => ({ ...f, nombre: e.target.value }))} />
                 </div>
                 <div className="g-row-2">
                   <div className="g-field">
-                    <label className="g-label">Categoría</label>
+                    <label className="g-label">Category</label>
                     <select className="g-select" value={form.categoria} onChange={e => setForm(f => ({ ...f, categoria: e.target.value }))}>
-                      <option>Bolsas</option><option>Film</option><option>Embalaje</option>
+                      <option>Bags</option><option>Film</option><option>Packaging</option>
                     </select>
                   </div>
                   <div className="g-field">
-                    <label className="g-label">Precio (€) *</label>
+                    <label className="g-label">Price (€) *</label>
                     <input className="g-input" type="number" step="0.01" min="0" required value={form.precio} onChange={e => setForm(f => ({ ...f, precio: e.target.value }))} placeholder="0.00" />
                   </div>
                 </div>
                 <div className="g-field" style={{ marginBottom: 0 }}>
-                  <label className="g-label">Stock inicial</label>
+                  <label className="g-label">Initial stock</label>
                   <input className="g-input" type="number" min="0" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} />
                 </div>
               </div>
               <div className="g-modal-footer">
-                <button type="button" className="g-btn g-btn-secondary" onClick={() => setModal(false)}>Cancelar</button>
-                <button type="submit" className="g-btn g-btn-primary" disabled={saving}>{saving ? 'Guardando...' : 'Guardar'}</button>
+                <button type="button" className="g-btn g-btn-secondary" onClick={() => setModal(false)}>Cancel</button>
+                <button type="submit" className="g-btn g-btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
               </div>
             </form>
           </div>

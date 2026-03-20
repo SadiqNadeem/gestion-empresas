@@ -66,9 +66,9 @@ export default function Pedidos() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const valid = rows.filter(r => r.producto_id);
-    if (!clienteId)                                        return alert('Selecciona un cliente');
-    if (clienteId === NUEVO_CLIENTE && !nuevoNombre.trim()) return alert('Escribe el nombre del nuevo cliente');
-    if (!valid.length)                                     return alert('Añade al menos un producto');
+    if (!clienteId)                                        return alert('Please select a customer');
+    if (clienteId === NUEVO_CLIENTE && !nuevoNombre.trim()) return alert('Please enter the new customer name');
+    if (!valid.length)                                     return alert('Add at least one product');
     setSaving(true);
     try {
       let resolvedId = clienteId;
@@ -99,7 +99,7 @@ export default function Pedidos() {
   };
 
   const handleAsignarRepartidor = async (pedidoId) => {
-    if (!repartidorAsignar) return alert('Selecciona un repartidor');
+    if (!repartidorAsignar) return alert('Please select a driver');
     try {
       await asignarRepartidor(pedidoId, repartidorAsignar);
       const rep = repartidores.find(r => r.id === repartidorAsignar);
@@ -109,32 +109,32 @@ export default function Pedidos() {
     } catch (err) { alert('Error: ' + err.message); }
   };
 
-  const formatFecha = (p) => p.fecha ? new Date(p.fecha + 'T00:00:00').toLocaleDateString('es-ES') : new Date(p.created_at).toLocaleDateString('es-ES');
+  const formatFecha = (p) => p.fecha ? new Date(p.fecha + 'T00:00:00').toLocaleDateString('en-GB') : new Date(p.created_at).toLocaleDateString('en-GB');
 
   return (
     <div className="g-page">
       <div className="g-section-header">
         <div>
           <h1 className="g-page-title" style={{ margin: 0 }}>
-            {filtroId ? `Pedidos de ${filtroNombre || '...'}` : 'Pedidos'}
+            {filtroId ? `Orders from ${filtroNombre || '...'}` : 'Orders'}
           </h1>
           {filtroId && (
             <button style={{ marginTop: 6, background: 'none', border: 'none', cursor: 'pointer', color: '#059669', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4, padding: 0 }} onClick={() => navigate('/pedidos')}>
-              <ArrowLeft size={14} /> Ver todos
+              <ArrowLeft size={14} /> View all
             </button>
           )}
         </div>
         <button className="g-btn g-btn-primary" onClick={openModal}>
-          <Plus size={16} /> Nuevo pedido
+          <Plus size={16} /> New order
         </button>
       </div>
 
       <div className="g-card">
-        {loading ? <div className="g-loading">Cargando...</div> :
-         pedidos.length === 0 ? <div className="g-empty">No hay pedidos.</div> : (
+        {loading ? <div className="g-loading">Loading...</div> :
+         pedidos.length === 0 ? <div className="g-empty">No orders yet.</div> : (
           <div className="g-table-wrap">
             <table className="g-table">
-              <thead><tr><th>Ref.</th><th>Cliente</th><th>Fecha</th><th>Total</th><th>Estado</th><th>Repartidor</th><th></th></tr></thead>
+              <thead><tr><th>Ref.</th><th>Customer</th><th>Date</th><th>Total</th><th>Status</th><th>Driver</th><th></th></tr></thead>
               <tbody>
                 {pedidos.map(p => {
                   const total = (p.pedido_items ?? []).reduce((s, i) => s + Number(i.cantidad) * Number(i.precio_unitario), 0);
@@ -151,7 +151,7 @@ export default function Pedidos() {
                       {asignandoId === p.id ? (
                         <div style={{ display: 'flex', gap: 6 }}>
                           <select className="g-select" style={{ fontSize: 12, padding: '2px 6px' }} value={repartidorAsignar} onChange={e => setRepartidorAsignar(e.target.value)}>
-                            <option value="">— Seleccionar —</option>
+                            <option value="">— Select —</option>
                             {repartidores.map(r => <option key={r.id} value={r.id}>{r.nombre}</option>)}
                           </select>
                           <button className="g-btn g-btn-success g-btn-sm" onClick={() => handleAsignarRepartidor(p.id)}><Check size={13} /></button>
@@ -161,7 +161,7 @@ export default function Pedidos() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                           <span style={{ fontSize: 13 }}>{p.repartidores?.nombre || '—'}</span>
                           {estadoEntrega !== 'entregado' && (
-                            <button className="g-btn g-btn-secondary g-btn-sm" onClick={() => { setAsignandoId(p.id); setRepartidorAsignar(p.repartidor_id || ''); }} title="Asignar repartidor">
+                            <button className="g-btn g-btn-secondary g-btn-sm" onClick={() => { setAsignandoId(p.id); setRepartidorAsignar(p.repartidor_id || ''); }} title="Assign driver">
                               <Truck size={13} />
                             </button>
                           )}
@@ -172,11 +172,11 @@ export default function Pedidos() {
                       <div style={{ display: 'flex', gap: 8 }}>
                         {p.estado === 'pendiente' && (
                           <button className="g-btn g-btn-success g-btn-sm" onClick={() => handleEntregado(p.id)}>
-                            <Check size={14} /> Entregar
+                            <Check size={14} /> Deliver
                           </button>
                         )}
                         <button className="g-btn g-btn-secondary g-btn-sm" onClick={() => navigate(`/facturacion?pedidoId=${p.id}`)}>
-                          <FileText size={14} /> Factura
+                          <FileText size={14} /> Invoice
                         </button>
                       </div>
                     </td>
@@ -193,7 +193,7 @@ export default function Pedidos() {
         <div className="g-modal-overlay" onClick={closeModal}>
           <div className="g-modal g-modal-lg" onClick={e => e.stopPropagation()}>
             <div className="g-modal-header">
-              <span className="g-modal-title">Nuevo pedido</span>
+              <span className="g-modal-title">New order</span>
               <button className="g-modal-close" onClick={closeModal}><X size={20} /></button>
             </div>
             <form onSubmit={handleSubmit}>
@@ -201,45 +201,45 @@ export default function Pedidos() {
 
                 {/* ── Cliente ── */}
                 <div className="g-field">
-                  <label className="g-label">Cliente *</label>
+                  <label className="g-label">Customer *</label>
                   <select className="g-select" value={clienteId} onChange={e => setClienteId(e.target.value)}>
-                    <option value="">— Seleccionar cliente —</option>
+                    <option value="">— Select customer —</option>
                     {clientes.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-                    <option value={NUEVO_CLIENTE}>＋ Nuevo cliente</option>
+                    <option value={NUEVO_CLIENTE}>＋ New customer</option>
                   </select>
                 </div>
 
                 {clienteId === NUEVO_CLIENTE && (
                   <div className="g-field">
-                    <label className="g-label">Nombre del nuevo cliente *</label>
+                    <label className="g-label">New customer name *</label>
                     <input
                       className="g-input"
                       autoFocus
                       required
                       value={nuevoNombre}
                       onChange={e => setNuevoNombre(e.target.value)}
-                      placeholder="Nombre completo o empresa"
+                      placeholder="Full name or company"
                     />
                   </div>
                 )}
 
                 {/* ── Dirección de entrega ── */}
                 <div className="g-field">
-                  <label className="g-label">Dirección de entrega <span style={{ fontWeight: 400, color: '#94a3b8' }}>(opcional)</span></label>
+                  <label className="g-label">Delivery address <span style={{ fontWeight: 400, color: '#94a3b8' }}>(optional)</span></label>
                   <input
                     className="g-input"
                     value={direccionEntrega}
                     onChange={e => setDireccionEntrega(e.target.value)}
-                    placeholder="Calle, número, ciudad..."
+                    placeholder="Street, number, city..."
                   />
                 </div>
 
                 {/* ── Repartidor ── */}
                 {repartidores.length > 0 && (
                   <div className="g-field">
-                    <label className="g-label">Repartidor <span style={{ fontWeight: 400, color: '#94a3b8' }}>(opcional)</span></label>
+                    <label className="g-label">Driver <span style={{ fontWeight: 400, color: '#94a3b8' }}>(optional)</span></label>
                     <select className="g-select" value={repartidorId} onChange={e => setRepartidorId(e.target.value)}>
-                      <option value="">— Asignar después —</option>
+                      <option value="">— Assign later —</option>
                       {repartidores.map(r => <option key={r.id} value={r.id}>{r.nombre}{r.zona ? ` · ${r.zona}` : ''}</option>)}
                     </select>
                   </div>
@@ -247,17 +247,17 @@ export default function Pedidos() {
 
                 {/* ── Productos ── */}
                 <div className="g-field" style={{ marginBottom: 0 }}>
-                  <label className="g-label">Productos</label>
+                  <label className="g-label">Products</label>
                   <div className="g-item-row-header">
-                    <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Producto</span>
-                    <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Cant.</span>
-                    <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Precio €</span>
+                    <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Product</span>
+                    <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Qty.</span>
+                    <span style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>Price €</span>
                     <span></span>
                   </div>
                   {rows.map((row, i) => (
                     <div key={i} className="g-item-row">
                       <select className="g-select" value={row.producto_id} onChange={e => handleRowChange(i, 'producto_id', e.target.value)}>
-                        <option value="">— Producto —</option>
+                        <option value="">— Product —</option>
                         {productos.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
                       </select>
                       <input className="g-input" type="number" min="1" value={row.cantidad} onChange={e => handleRowChange(i, 'cantidad', e.target.value)} />
@@ -268,15 +268,15 @@ export default function Pedidos() {
                     </div>
                   ))}
                   <button type="button" className="g-btn g-btn-secondary g-btn-sm" style={{ marginTop: 8 }} onClick={() => setRows(p => [...p, emptyRow()])}>
-                    <Plus size={14} /> Añadir producto
+                    <Plus size={14} /> Add product
                   </button>
                   <div className="g-item-row-total">Total: <strong>{total.toFixed(2)} €</strong></div>
                 </div>
 
               </div>
               <div className="g-modal-footer">
-                <button type="button" className="g-btn g-btn-secondary" onClick={closeModal}>Cancelar</button>
-                <button type="submit" className="g-btn g-btn-primary" disabled={saving}>{saving ? 'Creando...' : 'Crear pedido'}</button>
+                <button type="button" className="g-btn g-btn-secondary" onClick={closeModal}>Cancel</button>
+                <button type="submit" className="g-btn g-btn-primary" disabled={saving}>{saving ? 'Creating...' : 'Create order'}</button>
               </div>
             </form>
           </div>

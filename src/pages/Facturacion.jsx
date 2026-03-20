@@ -32,7 +32,7 @@ export default function Facturacion() {
 
   const formatFecha = (p) => {
     if (!p) return '—';
-    return p.fecha ? new Date(p.fecha + 'T00:00:00').toLocaleDateString('es-ES') : new Date(p.created_at).toLocaleDateString('es-ES');
+    return p.fecha ? new Date(p.fecha + 'T00:00:00').toLocaleDateString('en-GB') : new Date(p.created_at).toLocaleDateString('en-GB');
   };
 
   const generarPDF = () => {
@@ -40,21 +40,21 @@ export default function Facturacion() {
     let y = 20;
 
     doc.setFont('helvetica', 'bold'); doc.setFontSize(26); doc.setTextColor(15, 23, 42);
-    doc.text('FACTURA', 105, y, { align: 'center' }); y += 12;
+    doc.text('INVOICE', 105, y, { align: 'center' }); y += 12;
     doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(100, 116, 139);
     doc.text(`Ref: #${pedidoId.slice(0,8).toUpperCase()}`, 105, y, { align: 'center' }); y += 16;
 
     doc.setDrawColor(226, 232, 240); doc.line(20, y, 190, y); y += 10;
 
     doc.setTextColor(30, 41, 59); doc.setFontSize(10);
-    doc.text(`Cliente: ${pedido?.clientes?.nombre || '—'}`, 20, y);
-    doc.text(`Fecha: ${formatFecha(pedido)}`, 140, y); y += 7;
-    doc.text(`Estado: ${pedido?.estado || '—'}`, 20, y); y += 14;
+    doc.text(`Customer: ${pedido?.clientes?.nombre || '—'}`, 20, y);
+    doc.text(`Date: ${formatFecha(pedido)}`, 140, y); y += 7;
+    doc.text(`Status: ${pedido?.estado || '—'}`, 20, y); y += 14;
 
     doc.setFillColor(248, 250, 252); doc.rect(20, y - 5, 170, 10, 'F');
     doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(71, 85, 105);
-    doc.text('PRODUCTO', 22, y + 1); doc.text('CANT.', 110, y + 1);
-    doc.text('PRECIO', 133, y + 1); doc.text('TOTAL', 165, y + 1); y += 11;
+    doc.text('PRODUCT', 22, y + 1); doc.text('QTY.', 110, y + 1);
+    doc.text('PRICE', 133, y + 1); doc.text('TOTAL', 165, y + 1); y += 11;
 
     doc.setFont('helvetica', 'normal'); doc.setFontSize(10); doc.setTextColor(30, 41, 59);
     items.forEach(item => {
@@ -69,23 +69,23 @@ export default function Facturacion() {
     y += 8; doc.setDrawColor(226, 232, 240); doc.line(120, y, 190, y); y += 8;
     doc.setFontSize(10); doc.setTextColor(100, 116, 139);
     doc.text('Subtotal:', 120, y); doc.text(`${subtotal.toFixed(2)} €`, 183, y, { align: 'right' }); y += 8;
-    doc.text('IVA (21%):', 120, y); doc.text(`${iva.toFixed(2)} €`, 183, y, { align: 'right' }); y += 5;
+    doc.text('VAT (21%):', 120, y); doc.text(`${iva.toFixed(2)} €`, 183, y, { align: 'right' }); y += 5;
     doc.line(120, y, 190, y); y += 9;
     doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(15, 23, 42);
     doc.text('TOTAL:', 120, y); doc.text(`${total.toFixed(2)} €`, 183, y, { align: 'right' });
 
-    doc.save(`factura-${pedidoId.slice(0,8)}.pdf`);
+    doc.save(`invoice-${pedidoId.slice(0,8)}.pdf`);
   };
 
   return (
     <div className="g-page">
-      <h1 className="g-page-title">Facturación</h1>
+      <h1 className="g-page-title">Invoicing</h1>
 
       <div className="g-card" style={{ marginBottom: 24 }}>
         <div className="g-field" style={{ marginBottom: 0 }}>
-          <label className="g-label">Seleccionar pedido</label>
+          <label className="g-label">Select order</label>
           <select className="g-select" value={pedidoId} onChange={e => setPedidoId(e.target.value)}>
-            <option value="">— Selecciona un pedido —</option>
+            <option value="">— Select an order —</option>
             {pedidos.map(p => (
               <option key={p.id} value={p.id}>
                 #{p.id.slice(0,8).toUpperCase()} · {p.clientes?.nombre} · {formatFecha(p)} · {p.estado}
@@ -95,20 +95,20 @@ export default function Facturacion() {
         </div>
       </div>
 
-      {loadingItems && <div className="g-loading">Cargando factura...</div>}
+      {loadingItems && <div className="g-loading">Loading invoice...</div>}
 
       {pedidoId && !loadingItems && items.length > 0 && (
         <>
           <div className="g-invoice">
             <div className="g-invoice-header">
               <div>
-                <div className="g-invoice-title">FACTURA</div>
+                <div className="g-invoice-title">INVOICE</div>
                 <div className="g-invoice-ref">#{pedidoId.slice(0,8).toUpperCase()}</div>
               </div>
               <div className="g-invoice-meta">
-                <div><strong>Fecha:</strong> {formatFecha(pedido)}</div>
-                <div><strong>Cliente:</strong> {pedido?.clientes?.nombre}</div>
-                <div><strong>Estado: </strong>
+                <div><strong>Date:</strong> {formatFecha(pedido)}</div>
+                <div><strong>Customer:</strong> {pedido?.clientes?.nombre}</div>
+                <div><strong>Status: </strong>
                   <span className={`g-badge ${pedido?.estado === 'entregado' ? 'g-badge-green' : 'g-badge-yellow'}`}>{pedido?.estado}</span>
                 </div>
               </div>
@@ -117,7 +117,7 @@ export default function Facturacion() {
             <div className="g-invoice-divider" />
 
             <table className="g-table">
-              <thead><tr><th>Producto</th><th>Cantidad</th><th>Precio unit.</th><th>Total línea</th></tr></thead>
+              <thead><tr><th>Product</th><th>Quantity</th><th>Unit price</th><th>Line total</th></tr></thead>
               <tbody>
                 {items.map(item => (
                   <tr key={item.id}>
@@ -134,14 +134,14 @@ export default function Facturacion() {
 
             <div className="g-invoice-totals">
               <div className="g-invoice-total-row"><span>Subtotal</span><span>{subtotal.toFixed(2)} €</span></div>
-              <div className="g-invoice-total-row"><span>IVA (21%)</span><span>{iva.toFixed(2)} €</span></div>
+              <div className="g-invoice-total-row"><span>VAT (21%)</span><span>{iva.toFixed(2)} €</span></div>
               <div className="g-invoice-total-row main"><span>TOTAL</span><span>{total.toFixed(2)} €</span></div>
             </div>
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'center', marginTop: 28 }}>
             <button className="g-btn g-btn-primary" style={{ padding: '13px 36px', fontSize: 16 }} onClick={generarPDF}>
-              <Download size={18} /> Descargar PDF
+              <Download size={18} /> Download PDF
             </button>
           </div>
         </>
@@ -150,7 +150,7 @@ export default function Facturacion() {
       {pedidoId && !loadingItems && items.length === 0 && (
         <div className="g-card" style={{ textAlign: 'center', padding: '48px 24px' }}>
           <FileText size={44} color="#cbd5e1" style={{ margin: '0 auto 12px', display: 'block' }} />
-          <p style={{ color: '#94a3b8' }}>Este pedido no tiene productos registrados.</p>
+          <p style={{ color: '#94a3b8' }}>This order has no registered products.</p>
         </div>
       )}
     </div>

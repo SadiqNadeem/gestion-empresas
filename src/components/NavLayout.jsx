@@ -3,13 +3,13 @@ import { LayoutDashboard, Package, Users, ShoppingCart, BarChart2, FileText, Tru
 import { useAuth } from '../context/AuthContext';
 
 const links = [
-  { to: '/dashboard',     icon: LayoutDashboard, label: 'Dashboard'     },
-  { to: '/productos',     icon: Package,         label: 'Productos'     },
-  { to: '/clientes',      icon: Users,           label: 'Clientes'      },
-  { to: '/pedidos',       icon: ShoppingCart,    label: 'Pedidos'       },
-  { to: '/repartidores',  icon: Truck,           label: 'Repartidores'  },
-  { to: '/stock',         icon: BarChart2,       label: 'Stock'         },
-  { to: '/facturacion',   icon: FileText,        label: 'Facturación'   },
+  { to: '/dashboard',     icon: LayoutDashboard, label: 'Dashboard' },
+  { to: '/productos',     icon: Package,         label: 'Products'  },
+  { to: '/clientes',      icon: Users,           label: 'Customers' },
+  { to: '/pedidos',       icon: ShoppingCart,    label: 'Orders'    },
+  { to: '/repartidores',  icon: Truck,           label: 'Drivers'   },
+  { to: '/stock',         icon: BarChart2,       label: 'Stock'     },
+  { to: '/facturacion',   icon: FileText,        label: 'Invoicing' },
 ];
 
 export default function NavLayout() {
@@ -26,7 +26,7 @@ export default function NavLayout() {
       <nav className="g-nav">
         <span className="g-nav-brand">
           <Package size={20} color="#059669" />
-          Gestión
+          Management
         </span>
 
         <div className="g-nav-links">
@@ -44,7 +44,7 @@ export default function NavLayout() {
 
         <button className="g-nav-logout" onClick={handleLogout}>
           <LogOut size={16} />
-          <span>Salir</span>
+          <span>Logout</span>
         </button>
       </nav>
 
