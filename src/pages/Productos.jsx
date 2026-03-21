@@ -1,6 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, X } from 'lucide-react';
-import { getProductos, addProducto, deleteProducto } from '../lib/api';
+import { Plus, Trash2, X, Pencil } from 'lucide-react';
+import { getProductos, addProducto, updateProducto, deleteProducto } from '../lib/api';
+
+const CATEGORIAS = ['Bebidas', 'Cajas', 'Bolsas', 'Varios', 'Alimentación', 'Embalaje', 'Film'];
 
 function StockBadge({ stock }) {
   if (stock === 0) return <span className="g-badge g-badge-red">Out of stock</span>;
@@ -8,24 +10,40 @@ function StockBadge({ stock }) {
   return <span className="g-badge g-badge-green">{stock} units</span>;
 }
 
-const emptyForm = { nombre: '', categoria: 'Bags', precio: '', stock: '0' };
+const emptyForm = { nombre: '', categoria: 'Bebidas', precio: '', stock: '0' };
 
 export default function Productos() {
   const [productos, setProductos] = useState([]);
   const [loading, setLoading]     = useState(true);
   const [modal, setModal]         = useState(false);
+  const [editId, setEditId]       = useState(null);
   const [form, setForm]           = useState(emptyForm);
   const [saving, setSaving]       = useState(false);
 
   const load = () => { setLoading(true); getProductos().then(setProductos).finally(() => setLoading(false)); };
   useEffect(() => { load(); }, []);
 
+  const openNew = () => { setEditId(null); setForm(emptyForm); setModal(true); };
+  const openEdit = (p) => {
+    setEditId(p.id);
+    setForm({ nombre: p.nombre, categoria: p.categoria, precio: String(p.precio), stock: String(p.stock) });
+    setModal(true);
+  };
+  const closeModal = () => { setModal(false); setEditId(null); setForm(emptyForm); };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSaving(true);
     try {
-      await addProducto({ nombre: form.nombre, categoria: form.categoria, precio: Number(form.precio), stock: Number(form.stock) });
-      setModal(false); setForm(emptyForm); load();
+      const data = { nombre: form.nombre, categoria: form.categoria, precio: Number(form.precio), stock: Number(form.stock) };
+      if (editId) {
+        await updateProducto(editId, data);
+        setProductos(prev => prev.map(p => p.id === editId ? { ...p, ...data } : p));
+      } else {
+        await addProducto(data);
+        load();
+      }
+      closeModal();
     } catch (err) { alert('Error: ' + err.message); }
     finally { setSaving(false); }
   };
@@ -40,7 +58,7 @@ export default function Productos() {
     <div className="g-page">
       <div className="g-section-header">
         <h1 className="g-page-title" style={{ margin: 0 }}>Products</h1>
-        <button className="g-btn g-btn-primary" onClick={() => { setForm(emptyForm); setModal(true); }}>
+        <button className="g-btn g-btn-primary" onClick={openNew}>
           <Plus size={16} /> Add product
         </button>
       </div>
@@ -59,9 +77,14 @@ export default function Productos() {
                     <td>{Number(p.precio).toFixed(2)} €</td>
                     <td><StockBadge stock={p.stock} /></td>
                     <td>
-                      <button className="g-btn g-btn-danger g-btn-sm" onClick={() => handleDelete(p.id, p.nombre)}>
-                        <Trash2 size={14} />
-                      </button>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button className="g-btn g-btn-secondary g-btn-sm" onClick={() => openEdit(p)}>
+                          <Pencil size={14} />
+                        </button>
+                        <button className="g-btn g-btn-danger g-btn-sm" onClick={() => handleDelete(p.id, p.nombre)}>
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -72,11 +95,11 @@ export default function Productos() {
       </div>
 
       {modal && (
-        <div className="g-modal-overlay" onClick={() => setModal(false)}>
+        <div className="g-modal-overlay" onClick={closeModal}>
           <div className="g-modal" onClick={e => e.stopPropagation()}>
             <div className="g-modal-header">
-              <span className="g-modal-title">New product</span>
-              <button className="g-modal-close" onClick={() => setModal(false)}><X size={20} /></button>
+              <span className="g-modal-title">{editId ? 'Edit product' : 'New product'}</span>
+              <button className="g-modal-close" onClick={closeModal}><X size={20} /></button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="g-modal-body">
@@ -88,7 +111,7 @@ export default function Productos() {
                   <div className="g-field">
                     <label className="g-label">Category</label>
                     <select className="g-select" value={form.categoria} onChange={e => setForm(f => ({ ...f, categoria: e.target.value }))}>
-                      <option>Bags</option><option>Film</option><option>Packaging</option>
+                      {CATEGORIAS.map(c => <option key={c}>{c}</option>)}
                     </select>
                   </div>
                   <div className="g-field">
@@ -97,12 +120,12 @@ export default function Productos() {
                   </div>
                 </div>
                 <div className="g-field" style={{ marginBottom: 0 }}>
-                  <label className="g-label">Initial stock</label>
+                  <label className="g-label">Stock</label>
                   <input className="g-input" type="number" min="0" value={form.stock} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} />
                 </div>
               </div>
               <div className="g-modal-footer">
-                <button type="button" className="g-btn g-btn-secondary" onClick={() => setModal(false)}>Cancel</button>
+                <button type="button" className="g-btn g-btn-secondary" onClick={closeModal}>Cancel</button>
                 <button type="submit" className="g-btn g-btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Save'}</button>
               </div>
             </form>
