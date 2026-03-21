@@ -124,6 +124,15 @@ export async function updateEstadoPedido(id, estado) {
   return data;
 }
 
+export async function updatePedido(id, pedidoData, itemsArray) {
+  const { error: pedidoError } = await supabase.from('pedidos').update(pedidoData).eq('id', id);
+  if (pedidoError) throw pedidoError;
+  await supabase.from('pedido_items').delete().eq('pedido_id', id);
+  const { error: itemsError } = await supabase.from('pedido_items')
+    .insert(itemsArray.map(item => ({ ...item, pedido_id: id })));
+  if (itemsError) throw itemsError;
+}
+
 export async function deletePedido(id) {
   await supabase.from('pedido_items').delete().eq('pedido_id', id);
   const { error } = await supabase.from('pedidos').delete().eq('id', id);

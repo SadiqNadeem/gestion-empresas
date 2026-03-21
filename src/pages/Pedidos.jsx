@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Plus, Check, FileText, X, Trash2, ArrowLeft, Truck, Map } from 'lucide-react';
-import { getPedidos, getPedidosByCliente, getClientes, getProductos, addPedido, addCliente, updateEstadoPedido, getRepartidores, asignarRepartidor, updateEstadoEntrega, deletePedido } from '../lib/api';
+import { Plus, Check, FileText, X, Trash2, ArrowLeft, Truck, Map, Pencil } from 'lucide-react';
+import { getPedidos, getPedidosByCliente, getClientes, getProductos, addPedido, addCliente, updateEstadoPedido, getRepartidores, asignarRepartidor, updateEstadoEntrega, deletePedido, updatePedido, getPedidoItems } from '../lib/api';
 import MapPicker from '../components/MapPicker';
 
 const UNIDADES = ['units', 'boxes', 'sacks', 'packages', 'kg', 'liters'];
@@ -24,6 +24,7 @@ export default function Pedidos() {
   const [mapOpen, setMapOpen]               = useState(false);
   const [conIva, setConIva]                 = useState(false);
   const [ivaRate, setIvaRate]               = useState(21);
+  const [editandoId, setEditandoId]         = useState(null);
   const [asignandoId, setAsignandoId]       = useState(null); // pedido al que se está asignando repartidor
   const [repartidorAsignar, setRepartidorAsignar] = useState('');
   const navigate = useNavigate();
@@ -47,11 +48,25 @@ export default function Pedidos() {
   }, [filtroId]);
 
   const openModal = () => {
-    setClienteId(''); setNuevoNombre(''); setDireccionEntrega(''); setRepartidorId(''); setRows([emptyRow()]); setConIva(false); setIvaRate(21); setModal(true);
+    setEditandoId(null); setClienteId(''); setNuevoNombre(''); setDireccionEntrega(''); setRepartidorId(''); setRows([emptyRow()]); setConIva(false); setIvaRate(21); setModal(true);
+  };
+
+  const openEdit = async (p) => {
+    setEditandoId(p.id);
+    setClienteId(p.cliente_id || '');
+    setNuevoNombre('');
+    setDireccionEntrega(p.direccion_entrega || '');
+    setRepartidorId(p.repartidor_id || '');
+    setConIva(false); setIvaRate(21);
+    try {
+      const items = await getPedidoItems(p.id);
+      setRows(items.length ? items.map(i => ({ producto_id: i.producto_id, cantidad: i.cantidad, precio_unitario: i.precio_unitario })) : [emptyRow()]);
+    } catch { setRows([emptyRow()]); }
+    setModal(true);
   };
 
   const closeModal = () => {
-    setModal(false); setClienteId(''); setNuevoNombre(''); setDireccionEntrega(''); setRepartidorId(''); setRows([emptyRow()]); setConIva(false); setIvaRate(21);
+    setModal(false); setEditandoId(null); setClienteId(''); setNuevoNombre(''); setDireccionEntrega(''); setRepartidorId(''); setRows([emptyRow()]); setConIva(false); setIvaRate(21);
   };
 
   const handleRowChange = (i, field, value) => {
@@ -78,21 +93,25 @@ export default function Pedidos() {
     if (!valid.length)                                     return alert('Add at least one product');
     setSaving(true);
     try {
-      let resolvedId = clienteId;
-      if (clienteId === NUEVO_CLIENTE) {
-        const creado = await addCliente({ nombre: nuevoNombre.trim() });
-        resolvedId = creado.id;
-        setClientes(prev => [...prev, creado].sort((a, b) => a.nombre.localeCompare(b.nombre)));
+      const itemsData = valid.map(r => ({ producto_id: r.producto_id, cantidad: Number(r.cantidad), precio_unitario: Number(r.precio_unitario) }));
+      if (editandoId) {
+        const pedidoData = { cliente_id: clienteId, direccion_entrega: direccionEntrega.trim() || null };
+        if (repartidorId) pedidoData.repartidor_id = repartidorId;
+        await updatePedido(editandoId, pedidoData, itemsData);
+        closeModal(); load();
+      } else {
+        let resolvedId = clienteId;
+        if (clienteId === NUEVO_CLIENTE) {
+          const creado = await addCliente({ nombre: nuevoNombre.trim() });
+          resolvedId = creado.id;
+          setClientes(prev => [...prev, creado].sort((a, b) => a.nombre.localeCompare(b.nombre)));
+        }
+        const pedidoData = { cliente_id: resolvedId };
+        if (direccionEntrega.trim()) pedidoData.direccion_entrega = direccionEntrega.trim();
+        if (repartidorId) { pedidoData.repartidor_id = repartidorId; pedidoData.estado_entrega = 'en_ruta'; }
+        await addPedido(pedidoData, itemsData);
+        closeModal(); load();
       }
-      const pedidoData = { cliente_id: resolvedId };
-      if (direccionEntrega.trim()) pedidoData.direccion_entrega = direccionEntrega.trim();
-      if (repartidorId) { pedidoData.repartidor_id = repartidorId; pedidoData.estado_entrega = 'en_ruta'; }
-      await addPedido(
-        pedidoData,
-        valid.map(r => ({ producto_id: r.producto_id, cantidad: Number(r.cantidad), precio_unitario: Number(r.precio_unitario) }))
-      );
-      closeModal();
-      load();
     } catch (err) { alert('Error: ' + err.message); }
     finally { setSaving(false); }
   };
@@ -217,9 +236,12 @@ export default function Pedidos() {
                       )}
                     </td>
                     <td>
-                      <div style={{ display: 'flex', gap: 8 }}>
+                      <div style={{ display: 'flex', gap: 6 }}>
+                        <button className="g-btn g-btn-secondary g-btn-sm" onClick={() => openEdit(p)} title="Edit order">
+                          <Pencil size={14} />
+                        </button>
                         <button className="g-btn g-btn-secondary g-btn-sm" onClick={() => navigate(`/facturacion?pedidoId=${p.id}`)}>
-                          <FileText size={14} /> Invoice
+                          <FileText size={14} />
                         </button>
                         <button className="g-btn g-btn-sm" onClick={() => handleEliminar(p.id)}
                           style={{ background: '#fee2e2', color: '#dc2626', border: 'none', cursor: 'pointer', borderRadius: 6, padding: '4px 8px', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -240,7 +262,7 @@ export default function Pedidos() {
         <div className="g-modal-overlay" onClick={closeModal}>
           <div className="g-modal g-modal-lg" onClick={e => e.stopPropagation()}>
             <div className="g-modal-header">
-              <span className="g-modal-title">New order</span>
+              <span className="g-modal-title">{editandoId ? 'Edit order' : 'New order'}</span>
               <button className="g-modal-close" onClick={closeModal}><X size={20} /></button>
             </div>
             <form onSubmit={handleSubmit}>
@@ -367,7 +389,7 @@ export default function Pedidos() {
               </div>
               <div className="g-modal-footer">
                 <button type="button" className="g-btn g-btn-secondary" onClick={closeModal}>Cancel</button>
-                <button type="submit" className="g-btn g-btn-primary" disabled={saving}>{saving ? 'Creating...' : 'Create order'}</button>
+                <button type="submit" className="g-btn g-btn-primary" disabled={saving}>{saving ? 'Saving...' : editandoId ? 'Save changes' : 'Create order'}</button>
               </div>
             </form>
           </div>
