@@ -37,6 +37,32 @@ export async function deleteProducto(id) {
   if (error) throw error;
 }
 
+// ─── Categorias ───────────────────────────────────────────────────────────────
+
+export async function getCategorias() {
+  const { data, error } = await supabase
+    .from('categorias')
+    .select('*')
+    .order('nombre');
+  if (error) throw error;
+  return data;
+}
+
+export async function addCategoria(nombre) {
+  const { data, error } = await supabase
+    .from('categorias')
+    .insert({ nombre })
+    .select()
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function deleteCategoria(id) {
+  const { error } = await supabase.from('categorias').delete().eq('id', id);
+  if (error) throw error;
+}
+
 // ─── Clientes ────────────────────────────────────────────────────────────────
 
 export async function getClientes() {
